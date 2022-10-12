@@ -1,59 +1,42 @@
-use std::collections::HashSet;
+use std::{cell, collections::HashSet};
 
 pub struct Solution {}
-enum Cell {
-    SingleValue(char),
-    MultiValue(HashSet<char>),
-}
+type Option = HashSet<i32>;
+type Options = Vec<Vec<Option>>;
 type Board = Vec<Vec<char>>;
-type Progress = Vec<Vec<Cell>>;
 
-fn board_to_progress(board: &mut Board) -> Progress {
-    board
-        .into_iter()
-        .map(|el| {
-            el.into_iter()
-                .map(|chr| {
-                    if *chr == '.' {
-                        Cell::MultiValue(['1', '2', '3', '4', '5', '6', '7', '8', '9'].into())
-                    } else {
-                        Cell::SingleValue(*chr)
-                    }
-                })
-                .collect()
-        })
-        .collect()
-}
-
-fn remove_from_row(progress: &Progress, row: usize, chr: &char) -> Progress {
-    let mut new_progress = progress;
-    for (j, _) in (&progress[row]).into_iter().enumerate() {
-        new_progress[row][j] = match progress[row][j] {
-            Cell::SingleValue(chr) => Cell::SingleValue(chr),
-            Cell::MultiValue(mut val) => {
-                val.remove(&chr);
-                Cell::MultiValue(val)
-            }
-        };
+fn remove_from_row(grid: &mut Options, row: usize, num: i32) {
+    for cell in grid[row].iter_mut() {
+        cell.remove(&num);
     }
-    *new_progress
 }
-fn remove_from_col(progress: &mut Progress, col: i32, chr: char) {}
-fn remove_from_sub(progress: &mut Progress, sub: i32, chr: char) {}
 
-impl Solution {
-    pub fn solve_sudoku(board: &mut Vec<Vec<char>>) {
-        let mut progress: Vec<Vec<Cell>> = board_to_progress(board);
+fn remove_from_col(grid: &mut Options, col: usize, num: i32) {
+    for row in grid.iter_mut() {
+        row[col].remove(&num);
+    }
+}
 
-        for (i, row) in (&progress).into_iter().enumerate() {
-            for (j, cell) in row.into_iter().enumerate() {
-                progress = match cell {
-                    Cell::SingleValue(chr) => remove_from_row(&progress, i, chr),
-                    Cell::MultiValue(val) => remove_from_row(&progress, i, &'a'.into()),
-                };
+fn walk_board(board: &Board, options: &mut Options) {
+    for (i, row) in board.into_iter().enumerate() {
+        for (j, cell) in row.into_iter().enumerate() {
+            if *cell != '.' {
+                options[i][j].drain();
+                remove_from_row(options, i, *cell as i32);
+                remove_from_col(options, j, *cell as i32);
+                remove_from_sub(options, j, *cell as i32);
             }
         }
+    }
+}
 
+impl Solution {
+    pub fn solve_sudoku(board: &mut Board) {
+        let mut options: Options = vec![vec![HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9]); 9]; 9];
+
+        walk_board(&board, &mut options);
+
+        println!("{:?}", options);
         // for each element of the board if empty make all options
         // for each non empty element remove all combinations from others row, col, sub
         // look for items with one possibility and upgrade entries removing any additional invalid possibilities
