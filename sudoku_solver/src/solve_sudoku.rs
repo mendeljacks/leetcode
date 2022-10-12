@@ -25,9 +25,10 @@ fn board_to_progress(board: &mut Board) -> Progress {
         .collect()
 }
 
-fn remove_from_row(progress: &mut Progress, row: usize, chr: &char) -> Progress {
+fn remove_from_row(progress: &Progress, row: usize, chr: &char) -> Progress {
+    let mut new_progress = progress;
     for (j, _) in (&progress[row]).into_iter().enumerate() {
-        progress[row][j] = match progress[row][j] {
+        new_progress[row][j] = match progress[row][j] {
             Cell::SingleValue(chr) => Cell::SingleValue(chr),
             Cell::MultiValue(mut val) => {
                 val.remove(&chr);
@@ -35,7 +36,7 @@ fn remove_from_row(progress: &mut Progress, row: usize, chr: &char) -> Progress 
             }
         };
     }
-    *progress
+    *new_progress
 }
 fn remove_from_col(progress: &mut Progress, col: i32, chr: char) {}
 fn remove_from_sub(progress: &mut Progress, sub: i32, chr: char) {}
@@ -44,11 +45,11 @@ impl Solution {
     pub fn solve_sudoku(board: &mut Vec<Vec<char>>) {
         let mut progress: Vec<Vec<Cell>> = board_to_progress(board);
 
-        for (i, row) in (&progress).iter().enumerate() {
-            for (j, mut cell) in row.iter().enumerate() {
+        for (i, row) in (&progress).into_iter().enumerate() {
+            for (j, cell) in row.into_iter().enumerate() {
                 progress = match cell {
-                    Cell::SingleValue(chr) => remove_from_row(&mut progress, i, chr),
-                    // Cell::MultiValue(val) => remove_from_row(&mut progress, i, &'a'.into()),
+                    Cell::SingleValue(chr) => remove_from_row(&progress, i, chr),
+                    Cell::MultiValue(val) => remove_from_row(&progress, i, &'a'.into()),
                 };
             }
         }
