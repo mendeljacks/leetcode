@@ -4,8 +4,8 @@ use std::{
 };
 
 pub struct Solution {}
-type Option = HashSet<u32>;
-type Options = Vec<Vec<Option>>;
+type HSu32 = HashSet<u32>;
+type Options = Vec<Vec<HSu32>>;
 type Board = Vec<Vec<char>>;
 
 fn remove_from_row(grid: &mut Options, row: usize, num: u32) {
@@ -57,9 +57,17 @@ fn remove_singletons(board: &mut Board, options: &mut Options) {
     }
 }
 
-fn remove_preemptive(board: &mut Board, options: &mut Options) {
+fn all_equal<T: PartialEq>(iter: impl IntoIterator<Item = T>) -> bool {
+    let mut iter = iter.into_iter();
+
+    match iter.next() {
+        None => true,
+        Some(first) => iter.all(|x| x == first),
+    }
+}
+
+fn remove_preemptive(options: &mut Options) {
     // look for items with cardinality matching number of boxes preemptive set
-    // look for items with only one option for a number in the row, col, sub
 
     // let st = {
     //     "235": [(i,j), (i2,j2)]
@@ -85,18 +93,60 @@ fn remove_preemptive(board: &mut Board, options: &mut Options) {
     }
 
     for (k, v) in lookup {
-        if k.len() == v.len() && v.mapel(samerow) {
-            for each char in k remove from el in row besides map
+        // If same row preemptive set
+        if k.len() == v.len() && all_equal(v.iter().map(|el| el.0)) {
+            let character = k.chars();
+            for c in character {
+                let u = c.to_digit(10).unwrap();
+
+                let row = &mut options[v[0].0];
+                for (j, cell) in row.iter_mut().enumerate() {
+                    if cell.contains(&u) && !v.contains(&(v[0].0, j)) {
+                        cell.remove(&u);
+                    }
+                }
+            }
         }
-        if k.len() == v.len() && v.mapel(samerow) {
-            for each char in k remove from el in row besides map
+
+        // If same col preemptive set
+        if k.len() == v.len() && all_equal(v.iter().map(|el| el.1)) {
+            let character = k.chars();
+            for c in character {
+                let u = c.to_digit(10).unwrap();
+
+                for (i, row) in options.iter_mut().enumerate() {
+                    let cell = &mut row[v[0].1];
+                    if cell.contains(&u) && !v.contains(&(i, v[0].1)) {
+                        cell.remove(&u);
+                    }
+                }
+            }
         }
-        if k.len() == v.len() && v.mapel(samerow) {
-            for each char in k remove from el in row besides map
+
+        // If same sub preemptive set
+        if k.len() == v.len()
+            && (all_equal(v.iter().map(|el| el.0 / 3)) || all_equal(v.iter().map(|el| el.1 / 3)))
+        {
+            let character = k.chars();
+            for c in character {
+                let u = c.to_digit(10).unwrap();
+
+                for (i, row) in options.iter_mut().enumerate() {
+                    for (j, cell) in row.iter_mut().enumerate() {
+                        if cell.contains(&u)
+                            && !v.contains(&(i, j))
+                            && v[0].0 / 3 == i / 3
+                            && v[0].1 / 3 == j / 3
+                        {
+                            cell.remove(&u);
+                        }
+                    }
+                }
+            }
         }
-        
-        println!("test {:?} {:?}", k, v);
     }
+
+    // look for items with only one option for a number in the row, col, sub
 }
 
 fn walk_board(board: &mut Board, options: &mut Options) {
@@ -115,7 +165,7 @@ fn walk_board(board: &mut Board, options: &mut Options) {
 
     while !solved(board) {
         remove_singletons(board, options);
-        remove_preemptive(board, options)
+        remove_preemptive(options)
     }
 }
 
