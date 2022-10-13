@@ -60,10 +60,42 @@ fn remove_singletons(board: &mut Board, options: &mut Options) {
 fn remove_preemptive(board: &mut Board, options: &mut Options) {
     // look for items with cardinality matching number of boxes preemptive set
     // look for items with only one option for a number in the row, col, sub
-    for (i, row) in board.into_iter().enumerate() {
-        for (j, mut cell) in row.iter_mut().enumerate() {
+
+    // let st = {
+    //     "235": [(i,j), (i2,j2)]
+    // }
+
+    let mut lookup: HashMap<String, Vec<(usize, usize)>> = HashMap::new();
+
+    for (i, row) in options.into_iter().enumerate() {
+        for (j, cell) in row.iter().enumerate() {
             // number of cells with equal value match number of values
+
+            let string2: String = cell
+                .iter()
+                .collect::<Vec<&u32>>()
+                .iter()
+                .map(|el| std::char::from_u32(**el).unwrap())
+                .collect::<Vec<char>>()
+                .into_iter()
+                .collect();
+
+            lookup.entry(string2).or_insert(vec![]).push((i, j));
         }
+    }
+
+    for (k, v) in lookup {
+        if k.len() == v.len() && v.mapel(samerow) {
+            for each char in k remove from el in row besides map
+        }
+        if k.len() == v.len() && v.mapel(samerow) {
+            for each char in k remove from el in row besides map
+        }
+        if k.len() == v.len() && v.mapel(samerow) {
+            for each char in k remove from el in row besides map
+        }
+        
+        println!("test {:?} {:?}", k, v);
     }
 }
 
