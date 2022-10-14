@@ -121,33 +121,33 @@ fn walk_board(board: &mut Board, options: &mut Options) {
     initial_scan(board, options);
 
     while !solved(options) {
-        // print!("\x1B[2J\x1B[1;1H");
+        print!("\x1B[2J\x1B[1;1H");
 
-        // println!("=====================");
-        // for (i, row) in options.into_iter().enumerate() {
-        //     if i % 3 == 0 {
-        //         println!("---------------------------------------------------------------------------------------------------------------------");
-        //     }
-        //     println!(
-        //         "{0: <10}  {1: <10}  {2: <10} | {3: <10}  {4: <10}  {5: <10} | {6: <10}  {7: <10}  {8: <10}",
-        //         hsu32_to_string(&row[0]),
-        //         hsu32_to_string(&row[1]),
-        //         hsu32_to_string(&row[2]),
-        //         hsu32_to_string(&row[3]),
-        //         hsu32_to_string(&row[4]),
-        //         hsu32_to_string(&row[5]),
-        //         hsu32_to_string(&row[6]),
-        //         hsu32_to_string(&row[7]),
-        //         hsu32_to_string(&row[8])
-        //     );
-        // }
-        // println!("=====================");
+        println!("=====================");
+        for (i, row) in options.into_iter().enumerate() {
+            if i % 3 == 0 {
+                println!("---------------------------------------------------------------------------------------------------------------------");
+            }
+            println!(
+                "{0: <10}  {1: <10}  {2: <10} | {3: <10}  {4: <10}  {5: <10} | {6: <10}  {7: <10}  {8: <10}",
+                hsu32_to_string(&row[0]),
+                hsu32_to_string(&row[1]),
+                hsu32_to_string(&row[2]),
+                hsu32_to_string(&row[3]),
+                hsu32_to_string(&row[4]),
+                hsu32_to_string(&row[5]),
+                hsu32_to_string(&row[6]),
+                hsu32_to_string(&row[7]),
+                hsu32_to_string(&row[8])
+            );
+        }
+        println!("=====================");
 
         handle_preemptive_sets(options);
 
-        // std::thread::sleep(std::time::Duration::from_millis(500));
+        std::thread::sleep(std::time::Duration::from_millis(500));
     }
-    // println!("Solved!");
+    println!("Solved!");
 
     // loop through options and set board
     for (i, row) in options.into_iter().enumerate() {
