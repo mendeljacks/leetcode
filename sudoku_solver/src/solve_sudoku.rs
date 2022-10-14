@@ -8,22 +8,44 @@ type HSu32 = HashSet<u32>;
 type Options = Vec<Vec<HSu32>>;
 type Board = Vec<Vec<char>>;
 
-fn remove_from_row(grid: &mut Options, row: usize, num: u32) {
-    for cell in grid[row].iter_mut() {
-        cell.remove(&num);
+fn eliminate(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
+    if options[i][j].len() == 1 {
+        board[i][j] = options[i][j]
+            .iter()
+            .next()
+            .unwrap()
+            .to_string()
+            .chars()
+            .next()
+            .unwrap();
+    }
+    options[i][j].remove(&num);
+
+    remove_from_row(board, options, i, j, num);
+    remove_from_col(board, options, i, j, num);
+    remove_from_sub(board, options, i, j, num);
+}
+
+fn remove_from_row(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
+    for (col, cell) in options[i].iter_mut().enumerate() {
+        if col != j && cell.contains(&num) {
+            eliminate(board, options, i, j, num);
+        }
     }
 }
 
-fn remove_from_col(grid: &mut Options, col: usize, num: u32) {
-    for row in grid.iter_mut() {
-        row[col].remove(&num);
+fn remove_from_col(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
+    for (row, r) in options.iter().enumerate() {
+        if row != i && r[j].contains(&num) {
+            eliminate(board, options, i, j, num);
+        }
     }
 }
 
-fn remove_from_sub(grid: &mut Options, row: usize, col: usize, num: u32) {
-    for (i, r) in grid.iter_mut().enumerate() {
-        for (j, cell) in (*r).iter_mut().enumerate() {
-            if row / 3 == i / 3 && col / 3 == j / 3 {
+fn remove_from_sub(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
+    for (row, r) in options.iter_mut().enumerate() {
+        for (col, cell) in (*r).iter_mut().enumerate() {
+            if i / 3 == row / 3 && j / 3 == col / 3 {
                 cell.remove(&num);
             }
         }
@@ -49,9 +71,10 @@ fn remove_singletons(board: &mut Board, options: &mut Options) {
                 let u = options[i][j].drain().next().unwrap();
                 let mut chr = std::char::from_u32(u).unwrap();
                 cell = &mut chr;
-                remove_from_row(options, i, u);
-                remove_from_col(options, j, u);
-                remove_from_sub(options, i, j, u);
+
+                remove_from_row(board, options, i, j, u);
+                remove_from_col(board, options, i, j, u);
+                remove_from_sub(board, options, i, j, u);
             }
         }
     }
@@ -66,7 +89,7 @@ fn all_equal<T: PartialEq>(iter: impl IntoIterator<Item = T>) -> bool {
     }
 }
 
-fn remove_preemptive(options: &mut Options) {
+fn remove_preemptive(board: &mut Board, options: &mut Options) {
     // look for items with cardinality matching number of boxes preemptive set
 
     // let st = {
@@ -83,7 +106,7 @@ fn remove_preemptive(options: &mut Options) {
                 .iter()
                 .collect::<Vec<&u32>>()
                 .iter()
-                .map(|el| std::char::from_u32(**el).unwrap())
+                .map(|el| std::char::from_digit(**el, 10).unwrap())
                 .collect::<Vec<char>>()
                 .into_iter()
                 .collect();
@@ -156,16 +179,18 @@ fn walk_board(board: &mut Board, options: &mut Options) {
             if *cell != '.' {
                 // for each non empty element remove all combinations from others row, col, sub
                 options[i][j].drain();
-                remove_from_row(options, i, (*cell).to_digit(10).unwrap());
-                remove_from_col(options, j, (*cell).to_digit(10).unwrap());
-                remove_from_sub(options, i, j, (*cell).to_digit(10).unwrap());
+                remove_from_row(board, options, i, j, (*cell).to_digit(10).unwrap());
+                remove_from_col(board, options, i, j, (*cell).to_digit(10).unwrap());
+                remove_from_sub(board, options, i, j, (*cell).to_digit(10).unwrap());
             }
         }
     }
 
     while !solved(board) {
+        println!("Board: {:?}", board);
+        println!("Options: {:?}", options);
         remove_singletons(board, options);
-        remove_preemptive(options)
+        remove_preemptive(board, options)
     }
 }
 
