@@ -8,50 +8,6 @@ type HSu32 = HashSet<u32>;
 type Options = Vec<Vec<HSu32>>;
 type Board = Vec<Vec<char>>;
 
-fn eliminate(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
-    if options[i][j].len() == 1 {
-        board[i][j] = options[i][j]
-            .iter()
-            .next()
-            .unwrap()
-            .to_string()
-            .chars()
-            .next()
-            .unwrap();
-    }
-    options[i][j].remove(&num);
-
-    remove_from_row(board, options, i, j, num);
-    remove_from_col(board, options, i, j, num);
-    remove_from_sub(board, options, i, j, num);
-}
-
-fn remove_from_row(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
-    for (col, cell) in options[i].iter_mut().enumerate() {
-        if col != j && cell.contains(&num) {
-            eliminate(board, options, i, j, num);
-        }
-    }
-}
-
-fn remove_from_col(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
-    for (row, r) in options.iter().enumerate() {
-        if row != i && r[j].contains(&num) {
-            eliminate(board, options, i, j, num);
-        }
-    }
-}
-
-fn remove_from_sub(board: &mut Board, options: &mut Options, i: usize, j: usize, num: u32) {
-    for (row, r) in options.iter_mut().enumerate() {
-        for (col, cell) in (*r).iter_mut().enumerate() {
-            if i / 3 == row / 3 && j / 3 == col / 3 {
-                cell.remove(&num);
-            }
-        }
-    }
-}
-
 fn solved(board: &Board) -> bool {
     for row in board.into_iter() {
         for cell in row.into_iter() {
@@ -63,23 +19,6 @@ fn solved(board: &Board) -> bool {
     return true;
 }
 
-fn remove_singletons(board: &mut Board, options: &mut Options) {
-    // ssingletons and upgrade entries removing any additional invalid possibilities
-    for (i, row) in board.into_iter().enumerate() {
-        for (j, mut cell) in row.iter_mut().enumerate() {
-            if options[i][j].len() == 1 {
-                let u = options[i][j].drain().next().unwrap();
-                let mut chr = std::char::from_u32(u).unwrap();
-                cell = &mut chr;
-
-                remove_from_row(board, options, i, j, u);
-                remove_from_col(board, options, i, j, u);
-                remove_from_sub(board, options, i, j, u);
-            }
-        }
-    }
-}
-
 fn all_equal<T: PartialEq>(iter: impl IntoIterator<Item = T>) -> bool {
     let mut iter = iter.into_iter();
 
@@ -89,12 +28,8 @@ fn all_equal<T: PartialEq>(iter: impl IntoIterator<Item = T>) -> bool {
     }
 }
 
-fn remove_preemptive(board: &mut Board, options: &mut Options) {
-    // look for items with cardinality matching number of boxes preemptive set
-
-    // let st = {
-    //     "235": [(i,j), (i2,j2)]
-    // }
+fn handle_preemptive_sets(options: &mut Options) {
+    //  hashmap = { "235": [(i,j), (i2,j2)] };
 
     let mut lookup: HashMap<String, Vec<(usize, usize)>> = HashMap::new();
 
@@ -115,31 +50,31 @@ fn remove_preemptive(board: &mut Board, options: &mut Options) {
         }
     }
 
-    for (k, v) in lookup {
+    for (key, vals) in lookup {
         // If same row preemptive set
-        if k.len() == v.len() && all_equal(v.iter().map(|el| el.0)) {
-            let character = k.chars();
-            for c in character {
-                let u = c.to_digit(10).unwrap();
+        if key.len() == vals.len() && all_equal(vals.iter().map(|el| el.0)) {
+            let characters = key.chars();
+            for chr in characters {
+                let num = chr.to_digit(10).unwrap();
 
-                let row = &mut options[v[0].0];
+                let row = &mut options[vals[0].0];
                 for (j, cell) in row.iter_mut().enumerate() {
-                    if cell.contains(&u) && !v.contains(&(v[0].0, j)) {
-                        cell.remove(&u);
+                    if cell.contains(&num) && !vals.contains(&(vals[0].0, j)) {
+                        cell.remove(&num);
                     }
                 }
             }
         }
 
         // If same col preemptive set
-        if k.len() == v.len() && all_equal(v.iter().map(|el| el.1)) {
-            let character = k.chars();
-            for c in character {
-                let u = c.to_digit(10).unwrap();
+        if key.len() == vals.len() && all_equal(vals.iter().map(|el| el.1)) {
+            let characters = key.chars();
+            for chr in characters {
+                let u = chr.to_digit(10).unwrap();
 
                 for (i, row) in options.iter_mut().enumerate() {
-                    let cell = &mut row[v[0].1];
-                    if cell.contains(&u) && !v.contains(&(i, v[0].1)) {
+                    let cell = &mut row[vals[0].1];
+                    if cell.contains(&u) && !vals.contains(&(i, vals[0].1)) {
                         cell.remove(&u);
                     }
                 }
@@ -147,19 +82,20 @@ fn remove_preemptive(board: &mut Board, options: &mut Options) {
         }
 
         // If same sub preemptive set
-        if k.len() == v.len()
-            && (all_equal(v.iter().map(|el| el.0 / 3)) || all_equal(v.iter().map(|el| el.1 / 3)))
+        if key.len() == vals.len()
+            && (all_equal(vals.iter().map(|el| el.0 / 3))
+                || all_equal(vals.iter().map(|el| el.1 / 3)))
         {
-            let character = k.chars();
-            for c in character {
-                let u = c.to_digit(10).unwrap();
+            let characters = key.chars();
+            for chr in characters {
+                let u = chr.to_digit(10).unwrap();
 
                 for (i, row) in options.iter_mut().enumerate() {
                     for (j, cell) in row.iter_mut().enumerate() {
                         if cell.contains(&u)
-                            && !v.contains(&(i, j))
-                            && v[0].0 / 3 == i / 3
-                            && v[0].1 / 3 == j / 3
+                            && !vals.contains(&(i, j))
+                            && vals[0].0 / 3 == i / 3
+                            && vals[0].1 / 3 == j / 3
                         {
                             cell.remove(&u);
                         }
@@ -172,25 +108,30 @@ fn remove_preemptive(board: &mut Board, options: &mut Options) {
     // look for items with only one option for a number in the row, col, sub
 }
 
-fn walk_board(board: &mut Board, options: &mut Options) {
+fn initial_scan(board: &mut Board, options: &mut Options) {
     // initial scan
     for (i, row) in board.into_iter().enumerate() {
         for (j, cell) in row.into_iter().enumerate() {
             if *cell != '.' {
-                // for each non empty element remove all combinations from others row, col, sub
                 options[i][j].drain();
-                remove_from_row(board, options, i, j, (*cell).to_digit(10).unwrap());
-                remove_from_col(board, options, i, j, (*cell).to_digit(10).unwrap());
-                remove_from_sub(board, options, i, j, (*cell).to_digit(10).unwrap());
+                options[i][j].insert(cell.to_digit(10).unwrap());
             }
         }
     }
+}
+
+fn walk_board(board: &mut Board, options: &mut Options) {
+    initial_scan(board, options);
 
     while !solved(board) {
-        println!("Board: {:?}", board);
-        println!("Options: {:?}", options);
-        remove_singletons(board, options);
-        remove_preemptive(board, options)
+        println!("=====================");
+        for row in options.into_iter() {
+            for cell in row.into_iter() {
+                print!("{0: <10} ", cell);
+            }
+            println!();
+        }
+        handle_preemptive_sets(options);
     }
 }
 
