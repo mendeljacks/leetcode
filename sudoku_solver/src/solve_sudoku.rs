@@ -1,17 +1,14 @@
-use std::{
-    cell,
-    collections::{HashMap, HashSet},
-};
+use std::collections::{HashMap, HashSet};
 
 pub struct Solution {}
 type HSu32 = HashSet<u32>;
 type Options = Vec<Vec<HSu32>>;
 type Board = Vec<Vec<char>>;
 
-fn solved(board: &Board) -> bool {
-    for row in board.into_iter() {
+fn solved(options: &Options) -> bool {
+    for row in options.into_iter() {
         for cell in row.into_iter() {
-            if *cell == '.' {
+            if cell.len() != 1 {
                 return false;
             }
         }
@@ -19,13 +16,14 @@ fn solved(board: &Board) -> bool {
     return true;
 }
 
-fn all_equal<T: PartialEq>(iter: impl IntoIterator<Item = T>) -> bool {
-    let mut iter = iter.into_iter();
-
-    match iter.next() {
-        None => true,
-        Some(first) => iter.all(|x| x == first),
-    }
+fn hsu32_to_string(hs: &HashSet<u32>) -> String {
+    hs.iter()
+        .collect::<Vec<&u32>>()
+        .iter()
+        .map(|el| std::char::from_digit(**el, 10).unwrap())
+        .collect::<Vec<char>>()
+        .into_iter()
+        .collect()
 }
 
 fn handle_preemptive_sets(options: &mut Options) {
@@ -37,14 +35,7 @@ fn handle_preemptive_sets(options: &mut Options) {
         for (j, cell) in row.iter().enumerate() {
             // number of cells with equal value match number of values
 
-            let string2: String = cell
-                .iter()
-                .collect::<Vec<&u32>>()
-                .iter()
-                .map(|el| std::char::from_digit(**el, 10).unwrap())
-                .collect::<Vec<char>>()
-                .into_iter()
-                .collect();
+            let string2: String = hsu32_to_string(cell);
 
             lookup.entry(string2).or_insert(vec![]).push((i, j));
         }
@@ -52,52 +43,58 @@ fn handle_preemptive_sets(options: &mut Options) {
 
     for (key, vals) in lookup {
         // If same row preemptive set
-        if key.len() == vals.len() && all_equal(vals.iter().map(|el| el.0)) {
-            let characters = key.chars();
-            for chr in characters {
-                let num = chr.to_digit(10).unwrap();
+        for i in 0..9 {
+            if key.len() == vals.iter().filter(|el| el.0 == i).count() {
+                let characters = key.chars();
+                for chr in characters {
+                    let num = chr.to_digit(10).unwrap();
 
-                let row = &mut options[vals[0].0];
-                for (j, cell) in row.iter_mut().enumerate() {
-                    if cell.contains(&num) && !vals.contains(&(vals[0].0, j)) {
-                        cell.remove(&num);
+                    let row = &mut options[i];
+                    for (j, cell) in row.iter_mut().enumerate() {
+                        if !vals.contains(&(i, j)) {
+                            cell.remove(&num);
+                        }
                     }
                 }
             }
         }
 
         // If same col preemptive set
-        if key.len() == vals.len() && all_equal(vals.iter().map(|el| el.1)) {
-            let characters = key.chars();
-            for chr in characters {
-                let u = chr.to_digit(10).unwrap();
+        for j in 0..9 {
+            if key.len() == vals.iter().filter(|el| el.1 == j).count() {
+                let characters = key.chars();
+                for chr in characters {
+                    let u = chr.to_digit(10).unwrap();
 
-                for (i, row) in options.iter_mut().enumerate() {
-                    let cell = &mut row[vals[0].1];
-                    if cell.contains(&u) && !vals.contains(&(i, vals[0].1)) {
-                        cell.remove(&u);
+                    for (i, row) in options.iter_mut().enumerate() {
+                        let cell = &mut row[j];
+                        if !vals.contains(&(i, j)) {
+                            cell.remove(&u);
+                        }
                     }
                 }
             }
         }
 
-        // If same sub preemptive set
-        if key.len() == vals.len()
-            && (all_equal(vals.iter().map(|el| el.0 / 3))
-                || all_equal(vals.iter().map(|el| el.1 / 3)))
-        {
-            let characters = key.chars();
-            for chr in characters {
-                let u = chr.to_digit(10).unwrap();
+        for i in 0..3 {
+            for j in 0..3 {
+                // If same sub preemptive set
+                if key.len()
+                    == vals
+                        .iter()
+                        .filter(|val| val.0 / 3 == i && val.1 / 3 == j)
+                        .count()
+                {
+                    let characters = key.chars();
+                    for chr in characters {
+                        let u = chr.to_digit(10).unwrap();
 
-                for (i, row) in options.iter_mut().enumerate() {
-                    for (j, cell) in row.iter_mut().enumerate() {
-                        if cell.contains(&u)
-                            && !vals.contains(&(i, j))
-                            && vals[0].0 / 3 == i / 3
-                            && vals[0].1 / 3 == j / 3
-                        {
-                            cell.remove(&u);
+                        for (ii, row) in options.iter_mut().enumerate() {
+                            for (jj, cell) in row.iter_mut().enumerate() {
+                                if !vals.contains(&(ii, jj)) && ii / 3 == i && jj / 3 == j {
+                                    cell.remove(&u);
+                                }
+                            }
                         }
                     }
                 }
@@ -108,7 +105,7 @@ fn handle_preemptive_sets(options: &mut Options) {
     // look for items with only one option for a number in the row, col, sub
 }
 
-fn initial_scan(board: &mut Board, options: &mut Options) {
+fn initial_scan(board: &Board, options: &mut Options) {
     // initial scan
     for (i, row) in board.into_iter().enumerate() {
         for (j, cell) in row.into_iter().enumerate() {
@@ -123,15 +120,40 @@ fn initial_scan(board: &mut Board, options: &mut Options) {
 fn walk_board(board: &mut Board, options: &mut Options) {
     initial_scan(board, options);
 
-    while !solved(board) {
-        println!("=====================");
-        for row in options.into_iter() {
-            for cell in row.into_iter() {
-                print!("{0: <10} ", cell);
-            }
-            println!();
-        }
+    while !solved(options) {
+        // print!("\x1B[2J\x1B[1;1H");
+
+        // println!("=====================");
+        // for (i, row) in options.into_iter().enumerate() {
+        //     if i % 3 == 0 {
+        //         println!("---------------------------------------------------------------------------------------------------------------------");
+        //     }
+        //     println!(
+        //         "{0: <10}  {1: <10}  {2: <10} | {3: <10}  {4: <10}  {5: <10} | {6: <10}  {7: <10}  {8: <10}",
+        //         hsu32_to_string(&row[0]),
+        //         hsu32_to_string(&row[1]),
+        //         hsu32_to_string(&row[2]),
+        //         hsu32_to_string(&row[3]),
+        //         hsu32_to_string(&row[4]),
+        //         hsu32_to_string(&row[5]),
+        //         hsu32_to_string(&row[6]),
+        //         hsu32_to_string(&row[7]),
+        //         hsu32_to_string(&row[8])
+        //     );
+        // }
+        // println!("=====================");
+
         handle_preemptive_sets(options);
+
+        // std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+    // println!("Solved!");
+
+    // loop through options and set board
+    for (i, row) in options.into_iter().enumerate() {
+        for (j, cell) in row.into_iter().enumerate() {
+            board[i][j] = std::char::from_digit(*cell.iter().next().unwrap(), 10).unwrap();
+        }
     }
 }
 
@@ -141,10 +163,5 @@ impl Solution {
         let mut options: Options = vec![vec![HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9]); 9]; 9];
 
         walk_board(board, &mut options);
-
-        for i in options {
-            println!("{:?}", i);
-            println!("");
-        }
     }
 }
