@@ -5,6 +5,13 @@ type HSu32 = HashSet<u32>;
 type Options = Vec<Vec<HSu32>>;
 type Board = Vec<Vec<char>>;
 
+struct Guess {
+    row: usize,
+    col: usize,
+    value: u32,
+    options: Options,
+}
+
 fn solved(options: &Options) -> bool {
     for row in options.into_iter() {
         for cell in row.into_iter() {
@@ -41,7 +48,7 @@ fn handle_preemptive_sets(options: &mut Options) {
         }
     }
 
-    for (key, vals) in &lookup {
+    for (key, values) in &lookup {
         // add other keys in lookup object which have subset of chars
         let subset_keys: Vec<String> = lookup
             .keys()
@@ -54,15 +61,15 @@ fn handle_preemptive_sets(options: &mut Options) {
         let mut subset_vals = subset_keys
             .iter()
             .map(|el| lookup.get(el).unwrap().to_vec())
-            .collect::<Vec<Vec<(usize, usize)>>>();
-        // let vals be unique of vals with appended subset_vals
-        let vals = vals
-            .append(&mut subset_vals)
-            .collect::<Vec<(usize, usize)>>()
-            .into_iter()
-            .collect::<HashSet<(usize, usize)>>()
-            .into_iter()
+            .flatten()
             .collect::<Vec<(usize, usize)>>();
+
+        // Get unique values from subset_vals and values
+        subset_vals.append(&mut values.to_vec());
+        subset_vals.sort();
+        subset_vals.dedup();
+        let vals = subset_vals;
+
         for i in 0..9 {
             let characters = key.chars();
             for chr in characters {
@@ -192,6 +199,8 @@ fn initial_scan(board: &Board, options: &mut Options) {
 
 fn walk_board(board: &mut Board, options: &mut Options) {
     initial_scan(board, options);
+    let guesses: Vec<Guess> = vec![];
+    let changed = false;
 
     while !solved(options) {
         print!("\x1B[2J\x1B[1;1H");
@@ -199,10 +208,10 @@ fn walk_board(board: &mut Board, options: &mut Options) {
         println!("=====================");
         for (i, row) in options.into_iter().enumerate() {
             if i % 3 == 0 {
-                println!("---------------------------------------------------------------------------------------------------------------------");
+                println!("-------------------------------------------------------------------------------------------------");
             }
             println!(
-                "{0: <10}  {1: <10}  {2: <10} | {3: <10}  {4: <10}  {5: <10} | {6: <10}  {7: <10}  {8: <10}",
+                "{0: <10} {1: <10} {2: <10} | {3: <10} {4: <10} {5: <10} | {6: <10} {7: <10} {8: <10}",
                 hsu32_to_string(&row[0]),
                 hsu32_to_string(&row[1]),
                 hsu32_to_string(&row[2]),
