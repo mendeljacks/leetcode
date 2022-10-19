@@ -1,5 +1,3 @@
-pub struct Solution {}
-
 fn median(nums: &Vec<i32>) -> (f64, usize) {
     let len = nums.len();
     let mid = len / 2;
@@ -11,19 +9,14 @@ fn median(nums: &Vec<i32>) -> (f64, usize) {
     (nums[mid] as f64, mid)
 }
 
+pub struct Solution {}
 impl Solution {
-    pub fn find_median_sorted_arrays(nums1: Vec<i32>, nums2: Vec<i32>) -> f64 {
-        let mut nums1 = nums1;
-        let mut nums2 = nums2;
-
+    pub fn find_median_sorted_arrays(mut nums1: Vec<i32>, mut nums2: Vec<i32>) -> f64 {
         loop {
-            let len1 = nums1.len();
-            let len2 = nums2.len();
-
-            if len1 == 0 {
+            if nums1.len() == 0 {
                 return median(&nums2).0;
             }
-            if len2 == 0 {
+            if nums2.len() == 0 {
                 return median(&nums1).0;
             }
 
@@ -34,7 +27,7 @@ impl Solution {
                 return med1;
             }
 
-            if len1 <= 2 || len2 <= 2 {
+            if nums1.len() <= 2 || nums2.len() <= 2 {
                 let mut nums = nums1;
                 nums.extend(nums2);
                 nums.sort();
@@ -44,9 +37,9 @@ impl Solution {
             let chop = if mid1 < mid2 { mid1 } else { mid2 };
             if med1 < med2 {
                 nums1.drain(..chop);
-                nums2.drain((len2 - chop)..);
+                nums2.drain((nums2.len() - chop)..);
             } else {
-                nums1.drain((len1 - chop)..);
+                nums1.drain((nums1.len() - chop)..);
                 nums2.drain(..chop);
             }
         }
