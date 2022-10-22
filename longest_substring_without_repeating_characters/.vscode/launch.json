@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'longest_substring_without_repeating_characters'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=longest_substring_without_repeating_characters",
+                    "--package=longest_substring_without_repeating_characters"
+                ],
+                "filter": {
+                    "name": "longest_substring_without_repeating_characters",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'longest_substring_without_repeating_characters'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=longest_substring_without_repeating_characters",
+                    "--package=longest_substring_without_repeating_characters"
+                ],
+                "filter": {
+                    "name": "longest_substring_without_repeating_characters",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
